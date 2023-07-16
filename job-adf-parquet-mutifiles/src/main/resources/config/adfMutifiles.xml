@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:batch="http://www.springframework.org/schema/batch"
+       xmlns:adf="http://www.springframework.org/schema/jnj/adf"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+
+		http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch-3.0.xsd
+
+		http://www.springframework.org/schema/jnj/adf  http://www.springframework.org/schema/jnj/adf/spring-adf.xsd">
+
+    <adf:annotation-driven property-generator="propertyGenerator"/>
+    <bean id="propertyGenerator" class="com.jnj.adf.config.support.DefaultBeanPropertyGenerator">
+        <property name="values">
+            <map>
+                <entry key="naming.server" value="${namingServer}"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="taskPool"
+          class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor"
+          scope="step">
+        <property name="corePoolSize" value="${stepCorePoolSize}"/>
+        <property name="maxPoolSize" value="${stepMaxPoolSize}"/>
+    </bean>
+
+    <batch:job id="adf_parquet_job">
+        <batch:step id="adf_parquet_step">
+            <batch:partition step="jobsToRun" partitioner="rangePartitioner">
+                <batch:handler task-executor="taskPool"/>
+            </batch:partition>
+        </batch:step>
+        <batch:listeners>
+            <batch:listener ref="jobListener"/>
+        </batch:listeners>
+    </batch:job>
+
+    <batch:step id="jobsToRun">
+        <batch:tasklet task-executor="taskExecutor">
+            <batch:chunk reader="parquetReader" writer="compositeWriter"
+                         commit-interval="${commitInterval}">
+            </batch:chunk>
+            <batch:listeners>
+                <batch:listener ref="targetListener"/>
+            </batch:listeners>
+        </batch:tasklet>
+    </batch:step>
+
+    <bean id="jobListener" class="com.jnj.adf.xd.mutifiles.large.listener.AdfJobListener">
+    </bean>
+
+    <bean id="targetListener" class="com.jnj.adf.xd.mutifiles.large.listener.AdfParquetListener">
+        <property name="target" value="${target}"/>
+        <property name="format" value="${format}"/>
+        <property name="hdfsLocation" value="${hdfsLocation}"/>
+        <property name="kPrincipal" value="${kPrincipal}"/>
+        <property name="keyPath" value="${keyPath}"/>
+        <property name="hdfsFilePath" value="${hdfsFilePath}"/>
+        <property name="hdfsConfigPath" value="${hdfsConfigPath}"/>
+        <property name="awsAccessKeyId" value="${awsAccessKeyId}"/>
+        <property name="awsSecretAccessKey" value="${awsSecretAccessKey}"/>
+        <property name="s3Region" value="${s3Region}"/>
+        <property name="deltaLoad" value="${deltaLoad}"/>
+        <property name="envName" value="${envName}"/>
+        <property name="reportPath" value="${reportPath}"/>
+        <property name="ftpHost" value="${ftpHost}"/>
+        <property name="ftpPort" value="${ftpPort}"/>
+        <property name="ftpUser" value="${ftpUser}"/>
+        <property name="ftpPassword" value="${ftpPassword}"/>
+        <property name="ftpPath" value="${ftpPath}"/>
+        <property name="endPoint" value="${endPoint}"/>
+        <property name="columnsValidation" value="${columnsValidation}"/>
+        <property name="statusFile" value="${statusFile}"/>
+        <property name="convertParquet" value="${convertParquet}"/>
+        <property name="resourcePath" value="${resourcePath}"/>
+        <property name="dictionaryEncoding" value="${dictionaryEncoding}"/>
+    </bean>
+
+    <bean id="taskExecutor"
+          class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <property name="corePoolSize" value="1"/>
+        <property name="maxPoolSize" value="1"/>
+    </bean>
+
+    <bean id="rangePartitioner" class="com.jnj.adf.xd.mutifiles.large.partition.RangePartitioner">
+        <property name="parquetStorePath" value="${parquetStorePath}"/>
+        <property name="regionName" value="${regionName}"/>
+        <property name="username" value="${gridUser}"/>
+        <property name="password" value="${gridPass}"/>
+        <property name="namingServer" value="${namingServer}"/>
+        <property name="queryString" value="${queryString}"/>
+        <property name="skipGridColumns" value="${skipGridColumns}"/>
+        <property name="skipColumns" value="${skipColumns}"/>
+        <property name="columnsMapping" value="${columnsMapping}"/>
+        <property name="columns" value="${columns}"/>
+        <property name="fileNameSuffix" value="${fileNameSuffix}"/>
+        <property name="skipCreateParquet" value="${skipCreateParquet}"/>
+        <property name="columnsValidation" value="${columnsValidation}"/>
+    </bean>
+
+    <bean id="parquetReader" class="com.jnj.adf.springxd.export.parquet.reader.ADFParquetReader"
+          scope="step">
+        <property name="resource" value="#{stepExecutionContext[parquetPath]}"/>
+        <property name="filter" value="#{stepExecutionContext[queryString]}"></property>
+        <property name="format" value="${format}"/>
+        <property name="convertParquet" value="${convertParquet}"/>
+    </bean>
+
+    <bean id="compositeWriter"
+          class="org.springframework.batch.item.support.CompositeItemWriter">
+        <property name="delegates">
+            <list>
+                <bean class="com.jnj.adf.xd.mutifiles.large.writer.MultiParquetItemWriter"
+                      scope="step">
+                    <property name="resource" value="file:///${resourcePath}"/>
+                    <property name="delegate" ref="mutifilesItemWriter"/>
+                    <property name="resourceSuffixCreator" ref="parquetSuffix"/>
+                    <property name="regionName" value="#{stepExecutionContext[regionName]}"/>
+                    <property name="itemCountLimitPerResource" value="${maxLine}"/>
+                </bean>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="parquetSuffix" class="com.jnj.adf.xd.mutifiles.large.writer.ParquetSuffixCreator"
+          scope="step">
+        <property name="regionName" value="#{stepExecutionContext[regionName]}"/>
+        <property name="suffix" value="${format}"/>
+        <property name="useTimeSuffix" value="${useTimeSuffix}"/>
+        <property name="fileNamePrefix" value="${fileNamePrefix}"/>
+    </bean>
+
+    <bean id="mutifilesItemWriter" class="com.jnj.adf.xd.mutifiles.large.writer.AdfMutiFilesJobWriter"
+          scope="step">
+        <property name="regionName" value="#{stepExecutionContext[regionName]}"/>
+        <property name="columnNames" value="#{stepExecutionContext[columnNames]}"></property>
+        <property name="keys" value="#{stepExecutionContext[keys]}"/>
+        <property name="target" value="${target}"/>
+        <property name="format" value="${format}"/>
+        <property name="UTF8Mode" value="${UTF8Mode}"/>
+        <property name="convertParquet" value="${convertParquet}"/>
+        <property name="columnsMapping" value="#{stepExecutionContext[columnsMapping]}"/>
+    </bean>
+</beans>
