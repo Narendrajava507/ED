@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>job-adf-delete</artifactId>
+	<name>job-adf-delete</name>
+	<version>2.1-SNAPSHOT</version>
+	<url>http://maven.apache.org</url>
+
+	<parent>
+		<groupId>com.jnj.springxd</groupId>
+		<artifactId>xd-job-parent</artifactId>
+		<version>1.0</version>
+	</parent>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.jnj.springxd</groupId>
+			<artifactId>job-common</artifactId>
+			<!-- <version>0.1.0</version>
+			<scope>provided</scope> -->
+			<version>2.0-SNAPSHOT</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/job-common-2.0-SNAPSHOT.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>com.jnj.adf</groupId>
+			<artifactId>adf-core</artifactId>
+			<version>2.0-SNAPSHOT</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/adf-core-2.0-SNAPSHOT.jar</systemPath>
+		</dependency>
+	
+		<dependency>
+			<groupId>io.pivotal.gemfire</groupId>
+			<artifactId>geode-core</artifactId>
+			<!-- <version>9.10.6</version> -->
+			<version>9.10.13</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.jnj.adf</groupId>
+			<artifactId>adf-commons</artifactId>
+			<version>2.0-SNAPSHOT</version>
+			<scope>system</scope>
+			<systemPath>${basedir}/lib/adf-commons-2.0-SNAPSHOT.jar</systemPath>
+		</dependency>
+		<!--<dependency>-->
+			<!--<groupId>com.jnj.adf</groupId>-->
+			<!--<artifactId>simplement-service</artifactId>-->
+			<!--<version>0.3.04-SNAPSHOT</version>-->
+			<!--<scope>provided</scope>-->
+		<!--</dependency>-->
+	</dependencies>
+
+</project>
